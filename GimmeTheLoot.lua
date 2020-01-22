@@ -28,5 +28,5 @@ end
 
 
 function GimmeTheLoot:OnEnable()
-  self:Print("GimmeTheLoot")
+  self:Print("GimmeTheLoot enabled")
 end
