@@ -1,0 +1,9 @@
+## Interface: 11303
+## Title: GimmeTheLoot
+## Notes: Track your loot roll history
+## Author: leetcoderZ
+## Version: v0.0.1
+
+embeds.xml
+
+GimmeTheLoot.lua
