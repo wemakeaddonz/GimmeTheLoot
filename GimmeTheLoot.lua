@@ -1,5 +1,5 @@
 if not _TEST then
-  GimmeTheLoot = LibStub("AceAddon-3.0"):NewAddon("GimmeTheLoot")
+  GimmeTheLoot = LibStub("AceAddon-3.0"):NewAddon("GimmeTheLoot", "AceConsole-3.0", "AceEvent-3.0")
 end
 
 local defaults = {
@@ -25,7 +25,6 @@ function GimmeTheLoot:OnInitialize()
   self.db = LibStub("AceDB-3.0"):New("GTL_DB", defaults)
   self:RegisterEvent("START_LOOT_ROLL", "TrackLootRoll")
 end
-
 
 function GimmeTheLoot:OnEnable()
   self:Print("GimmeTheLoot enabled")
