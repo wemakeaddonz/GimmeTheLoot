@@ -1,0 +1,23 @@
+name: CI
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Install prerequisites
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y luarocks
+        luarocks install --local luacheck
+        luarocks install --local busted
+
+    - name: Run linting
+      run: |
+        /home/runner/.luarocks/bin/luacheck --config .luacheckrc .
+
+    - name: Run tests
+      run: |
+        /home/runner/.luarocks/bin/busted ./spec
