@@ -25,3 +25,8 @@ function GimmeTheLoot:OnInitialize()
   self.db = LibStub("AceDB-3.0"):New("GTL_DB", defaults)
   self:RegisterEvent("START_LOOT_ROLL", "TrackLootRoll")
 end
+
+
+function GimmeTheLoot:OnEnable()
+  self:Print("GimmeTheLoot")
+end
