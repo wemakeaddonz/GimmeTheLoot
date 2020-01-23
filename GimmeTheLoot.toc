@@ -3,7 +3,6 @@
 ## Notes: Track your loot roll history
 ## Author: leetcoderZ
 ## Version: v0.0.1
-
-embeds.xml
+## SavedVariables: GTL_DB
 
 GimmeTheLoot.lua
