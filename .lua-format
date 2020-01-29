@@ -1,0 +1,10 @@
+break_after_table_lb: false
+break_before_functioncall_rp: true
+chop_down_kv_table: true
+chop_down_table: true
+column_limit: 100
+double_quote_to_single_quote: true
+extra_sep_at_table_end: true
+keep_simple_control_block_one_line: false
+keep_simple_function_one_line: false
+spaces_before_call: 1

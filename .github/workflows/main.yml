@@ -15,6 +15,11 @@ jobs:
         luarocks install --local luacheck
         luarocks install --local luacov
 
+    # - name: Check formatting
+    #   run: |
+    #     diff -q <(lua-format -c .lua-format GimmeTheLoot.lua) GimmeTheLoot.lua
+    #     diff -q <(lua-format -c .lua-format spec/rolls_spec.lua) spec/rolls_spec.lua
+
     - name: Run linting
       run: |
         /home/runner/.luarocks/bin/luacheck --config .luacheckrc .
