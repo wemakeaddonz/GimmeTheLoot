@@ -1,0 +1,12 @@
+return {
+  _all = {
+    coverage = true
+  },
+  default = {
+    verbose = true
+  },
+  shuffled = {
+    coverage = false,
+    shuffle = true,
+  },
+}

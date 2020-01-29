@@ -26,7 +26,8 @@ jobs:
 
     - name: Run tests
       run: |
-        /home/runner/.luarocks/bin/busted --coverage ./spec
+        /home/runner/.luarocks/bin/busted
+        /home/runner/.luarocks/bin/busted --run shuffled --repeat 5
 
     - name: Report coverage
       run: |
