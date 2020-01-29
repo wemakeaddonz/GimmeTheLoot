@@ -4,35 +4,89 @@ if not _TEST then
 end
 
 local defaults = {profile = {rolls = {}}}
+pendingLootSessions = {}
 
-local function ItemIdFromRoll(rollID)
-    -- TODO: implement
-    return rollID
-end
-
-function GimmeTheLoot:TrackLootRoll(rollID, rollTime, lootHandle) -- luacheck: no unused args
-    table.insert(self.db.profile.rolls, {time = rollTime, itemId = ItemIdFromRoll(rollID)})
-end
-
+-- TODO: Make this an actual class
+--[[
+    An example row in pendingLootSessions is:
+    {
+        item = "|cff1eff00|Hitem:4564::::::1097:639026432:60:::1::::|h[Spiked Club of the Boar]|h|r"
+        rollID = 1
+        rollTime = 1580064360
+        rolls = {
+            greeds = {
+                "Dyamito" = 79
+                "Etsumira" = 42
+                "Congo" = 69
+            },
+            needs = {
+                "Swazzle" = 1
+            },
+            passes = {
+                "Muffinmaam",
+            }
+        },
+        winner = "Swazzle"
+    }
+]]
 function GimmeTheLoot:OnInitialize()
     -- TODO: use self vs GimmeTheLoot syntax
     self.db = LibStub('AceDB-3.0'):New('GTL_DB', defaults)
-    self:RegisterEvent('START_LOOT_ROLL', 'TrackLootRoll')
-    self:RegisterChatCommand('gtl', 'CmdDisplay')
+    self:RegisterChatCommand('gtl', 'DisplayFrame')
+
+    self:RegisterEvent('START_LOOT_ROLL', function(_, ...)
+        return GimmeTheLoot:START_LOOT_ROLL(...)
+    end)
+    self:RegisterEvent('LOOT_ITEM_AVAILABLE', function(_, ...)
+        return GimmeTheLoot:LOOT_ITEM_AVAILABLE(...)
+    end)
+    self:RegisterEvent('CHAT_MSG_LOOT', function(_, ...)
+        return GimmeTheLoot:CHAT_MSG_LOOT(...)
+    end)
+    self:RegisterEvent('LOOT_ROLLS_COMPLETE', function(_, ...)
+        return GimmeTheLoot:LOOT_ROLLS_COMPLETE(...)
+    end)
 end
 
-function GimmeTheLoot:OnEnable()
-    self:Print('GimmeTheLoot enabled')
-    GimmeTheLoot:AddDummyRoll()
+function GimmeTheLoot:START_LOOT_ROLL(rollID, _, lootHandle)
+    pendingLootSessions[lootHandle] = {
+        item = nil,
+        rollID = rollID,
+        -- intentionally ignore the rollTime arg as it seems to provide a constant value
+        rollTime = time(),
+        rolls = {greeds = {}, needs = {}, passes = {}},
+        winner = nil,
+    }
 end
 
-function GimmeTheLoot:AddDummyRoll()
-    table.insert(self.db.profile.rolls,
-                 {time = 1, itemId = 13262, type = 'need', won = true, value = 1})
+function GimmeTheLoot:LOOT_ITEM_AVAILABLE(item, lootHandle)
+    local itemName = GetItemInfo(item)
+    pendingLootSessions[lootHandle]['item'] = itemName
 end
 
-function GimmeTheLoot:CmdDisplay()
-    GimmeTheLoot:DisplayFrame()
+function GimmeTheLoot:CHAT_MSG_LOOT(text)
+    for _, v in pairs(pendingLootSessions) do
+        local lootMsgInfo = {GetLootMsgInfo(text, v['item'])}
+        -- print(text)
+        -- tprint(lootMsgInfo--)
+
+        if lootMsgInfo then
+            if lootMsgInfo[1] == 'greed' then
+                v['rolls']['greeds'][lootMsgInfo[2]] = lootMsgInfo[3]
+            elseif lootMsgInfo[1] == 'need' then
+                v['rolls']['needs'][lootMsgInfo[2]] = lootMsgInfo[3]
+            elseif lootMsgInfo[1] == 'pass' then
+                v['rolls']['passes'][lootMsgInfo[2]] = true
+            elseif lootMsgInfo[1] == 'win' then
+                v['winner'] = lootMsgInfo[2]
+            end
+        end
+    end
+end
+
+function GimmeTheLoot:LOOT_ROLLS_COMPLETE(lootHandle)
+    table.insert(self.db.profile.rolls, pendingLootSessions[lootHandle])
+    return pendingLootSessions[lootHandle]
 end
 
 function GimmeTheLoot:DisplayFrame()
@@ -53,6 +107,13 @@ function GimmeTheLoot:DisplayFrame()
     local scroll = gui:Create('ScrollFrame')
     scroll:SetLayout('Flow') -- probably?
     scrollcontainer:AddChild(scroll)
+
+    for _, v in pairs(self.db.profile.rolls) do
+        local label = gui:Create('Label')
+        label:SetText(v['item'] .. v['winner'] .. date('%m/%d/%y %H:%M:%S', v['rollTime']))
+        scroll:AddChild(label)
+    end
+
 end
 
 function GimmeTheLoot:CmdDisplayold(_)
@@ -87,4 +148,46 @@ function GimmeTheLoot:CmdDisplayold(_)
     tree:SetRelativeWidth(1)
     frame:AddChild(tree)
     tree:EnableButtonTooltips(false)
+end
+
+-- utility functions
+function GetLootMsgInfo(msg, item)
+    local passer, needer, greeder, roll, winner
+    passer = string.match(msg, '%s(.+) passed on: .+' .. item)
+    if passer then
+        return 'pass', passer
+    end
+
+    roll, greeder = string.match(msg, 'Greed Roll %- (%d+) for .+' .. item .. '.+by (.+)')
+    if greeder then
+        return 'greed', greeder, tonumber(roll)
+    end
+
+    roll, needer = string.match(msg, 'Need Roll %- (%d+) for .+' .. item .. '.+ by (.+)')
+    if needer then
+        return 'need', needer, tonumber(roll)
+    end
+
+    winner = string.match(msg, '(.+) won: .+' .. item)
+    if winner then
+        return 'win', winner
+    end
+end
+
+-- debugging functions
+function tprint(tbl, indent)
+    if not indent then
+        indent = 0
+    end
+    for k, v in pairs(tbl) do
+        local formatting = string.rep('  ', indent) .. k .. ': '
+        if type(v) == 'table' then
+            print(formatting)
+            tprint(v, indent + 1)
+        elseif type(v) == 'boolean' then
+            print(formatting .. tostring(v))
+        else
+            print(formatting .. v)
+        end
+    end
 end
