@@ -9,3 +9,5 @@ repos:
   rev: v1.0.0
   hooks:
     - id: luacheck
+
+# TODO: Add auto-formatting with lua-format (see CI)
