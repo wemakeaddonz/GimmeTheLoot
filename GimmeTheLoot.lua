@@ -107,6 +107,13 @@ function GimmeTheLoot:DisplayFrame()
     local scroll = gui:Create('ScrollFrame')
     scroll:SetLayout('Flow') -- probably?
     scrollcontainer:AddChild(scroll)
+
+    for _, v in pairs(self.db.profile.rolls) do
+        local label = gui:Create('Label')
+        label:SetText(v['item'] .. v['winner'] .. date('%m/%d/%y %H:%M:%S', v['rollTime']))
+        scroll:AddChild(label)
+    end
+
 end
 
 function GimmeTheLoot:CmdDisplayold(_)
