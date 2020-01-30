@@ -5,8 +5,9 @@ return {
   default = {
     verbose = true
   },
-  shuffled = {
+  exhaustive = {
     coverage = false,
+    ["repeat"] = 5,
     shuffle = true,
   },
 }
