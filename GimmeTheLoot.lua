@@ -6,6 +6,31 @@ end
 local defaults = {profile = {rolls = {}}}
 pendingLootSessions = {}
 
+local options = {
+    name = 'GimmeTheLoot',
+    handler = GimmeTheLoot,
+    type = 'group',
+    args = {
+        show = {
+            type = 'execute',
+            name = 'Show',
+            desc = 'Show roll history',
+            func = 'DisplayFrame',
+        },
+        reset = {
+            type = 'execute',
+            name = 'Reset',
+            desc = 'Reset this character\'s roll history',
+            func = 'ResetDatabase',
+        },
+    },
+}
+
+function GimmeTheLoot:ResetDatabase(info)
+    self.db.profile.rolls = {}
+    self:Print('Database reset.')
+end
+
 -- TODO: Make this an actual class
 --[[
     An example row in pendingLootSessions is:
@@ -32,7 +57,9 @@ pendingLootSessions = {}
 function GimmeTheLoot:OnInitialize()
     -- TODO: use self vs GimmeTheLoot syntax
     self.db = LibStub('AceDB-3.0'):New('GTL_DB', defaults)
-    self:RegisterChatCommand('gtl', 'DisplayFrame')
+
+    --self:RegisterChatCommand('gtl', 'DisplayFrame') -- replaced by Ace3
+    LibStub('AceConfig-3.0'):RegisterOptionsTable('GimmeTheLoot', options, {'gimmetheloot', 'gtl'})
 
     self:RegisterEvent('START_LOOT_ROLL', function(_, ...)
         return GimmeTheLoot:START_LOOT_ROLL(...)
