@@ -158,21 +158,14 @@ function GimmeTheLoot:DisplayFrame()
 
         local rollTime = gui:Create('Label')
         rollTime:SetRelativeWidth(.25)
-        rollTime:SetText(v['rollTime'])
+        rollTime:SetText(date('%b %d %Y %I:%M %p', v['rollTime']))
         row:AddChild(rollTime)
 
         local winner = gui:Create('Label')
         winner:SetRelativeWidth(.25)
         winner:SetText(v['winner'])
         row:AddChild(winner)
-
-
-
-        --local label = gui:Create('Label')
-        --label:SetText(v['item'] .. v['winner'] .. date('%m/%d/%y %H:%M:%S', v['rollTime']))
-        --scroll:AddChild(label)
     end
-
 end
 
 -- utility functions
