@@ -111,8 +111,10 @@ function GimmeTheLoot:CHAT_MSG_LOOT(text)
 end
 
 function GimmeTheLoot:LOOT_ROLLS_COMPLETE(lootHandle)
-    table.insert(self.db.profile.rolls, pendingLootSessions[lootHandle])
-    return pendingLootSessions[lootHandle]
+    local session = pendingLootSessions[lootHandle]
+    table.insert(self.db.profile.rolls, session)
+    pendingLootSessions[lootHandle] = nil
+    return session
 end
 
 function GimmeTheLoot:DisplayFrame()
