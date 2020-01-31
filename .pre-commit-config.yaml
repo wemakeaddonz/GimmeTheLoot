@@ -10,4 +10,5 @@ repos:
   hooks:
     - id: luacheck
 
+exclude: Libs
 # TODO: Add auto-formatting with lua-format (see CI)
