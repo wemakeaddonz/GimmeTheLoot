@@ -131,13 +131,44 @@ function GimmeTheLoot:DisplayFrame()
     frame:AddChild(scrollcontainer)
 
     local scroll = gui:Create('ScrollFrame')
-    scroll:SetLayout('Flow') -- probably?
+    scroll:SetLayout('List') -- probably?
     scrollcontainer:AddChild(scroll)
 
     for _, v in pairs(self.db.profile.rolls) do
-        local label = gui:Create('Label')
-        label:SetText(v['item'] .. v['winner'] .. date('%m/%d/%y %H:%M:%S', v['rollTime']))
-        scroll:AddChild(label)
+        local row = gui:Create('SimpleGroup')
+        row:SetFullWidth(true)
+        row:SetLayout('Flow')
+        scroll:AddChild(row)
+
+        local itemName = gui:Create('InteractiveLabel')
+        itemName:SetRelativeWidth(.4)
+        --itemName:SetText(v['item'])
+        local itemInfo = {GetItemInfo(18805)}
+        itemName:SetText(itemInfo[2])
+        --itemName:SetImage(itemInfo[10])
+        itemName:SetHighlight({255, 0, 0, 255})
+        row:AddChild(itemName)
+
+        local rollID = gui:Create('Label')
+        rollID:SetRelativeWidth(.1)
+        rollID:SetText(v['rollID'])
+        row:AddChild(rollID)
+
+        local rollTime = gui:Create('Label')
+        rollTime:SetRelativeWidth(.25)
+        rollTime:SetText(v['rollTime'])
+        row:AddChild(rollTime)
+
+        local winner = gui:Create('Label')
+        winner:SetRelativeWidth(.25)
+        winner:SetText(v['winner'])
+        row:AddChild(winner)
+
+
+
+        --local label = gui:Create('Label')
+        --label:SetText(v['item'] .. v['winner'] .. date('%m/%d/%y %H:%M:%S', v['rollTime']))
+        --scroll:AddChild(label)
     end
 
 end
