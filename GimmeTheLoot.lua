@@ -26,7 +26,7 @@ local options = {
     },
 }
 
-function GimmeTheLoot:ResetDatabase(info)
+function GimmeTheLoot:ResetDatabase(_)
     if self.db.profile.rolls then self.db.profile.rolls = {} end
     self:Print('Database reset.')
 end
@@ -58,7 +58,6 @@ function GimmeTheLoot:OnInitialize()
     -- TODO: use self vs GimmeTheLoot syntax
     self.db = LibStub('AceDB-3.0'):New('GTL_DB', defaults)
 
-    --self:RegisterChatCommand('gtl', 'DisplayFrame') -- replaced by Ace3
     LibStub('AceConfig-3.0'):RegisterOptionsTable('GimmeTheLoot', options, {'gimmetheloot', 'gtl'})
 
     self:RegisterEvent('START_LOOT_ROLL', function(_, ...)
@@ -141,40 +140,6 @@ function GimmeTheLoot:DisplayFrame()
         scroll:AddChild(label)
     end
 
-end
-
-function GimmeTheLoot:CmdDisplayold(_)
-    -- display frame
-    local gui = LibStub('AceGUI-3.0')
-    local frame = gui:Create('Frame')
-    frame:SetTitle('Roll History')
-    frame:SetCallback('OnClose', function(widget)
-        gui:Release(widget)
-    end)
-    frame:SetLayout('Fill')
-
-    local _, itemLink, _, _, _, _, _, _, _, itemIcon = GetItemInfo(13262)
-    local _, itemLink2, _, _, _, _, _, _, _, itemIcon2 = GetItemInfo(19019)
-    local _, itemLink3, _, _, _, _, _, _, _, itemIcon3 = GetItemInfo(13947)
-
-    local testTable = {
-        {
-            value = 'weapons',
-            text = 'weapons',
-            children = {
-                {value = '13262', text = itemLink, icon = itemIcon},
-                {value = '19019', text = itemLink2, icon = itemIcon2},
-            },
-        },
-        {value = '13947', text = itemLink3, icon = itemIcon3},
-        {value = '', text = 'foobar'},
-    }
-
-    local tree = gui:Create('TreeGroup')
-    tree:SetTree(testTable)
-    tree:SetRelativeWidth(1)
-    frame:AddChild(tree)
-    tree:EnableButtonTooltips(false)
 end
 
 -- utility functions
