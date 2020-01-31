@@ -27,7 +27,7 @@ local options = {
 }
 
 function GimmeTheLoot:ResetDatabase(info)
-    self.db.profile.rolls = {}
+    if self.db.profile.rolls then self.db.profile.rolls = {} end
     self:Print('Database reset.')
 end
 
