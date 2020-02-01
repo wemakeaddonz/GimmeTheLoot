@@ -3,14 +3,19 @@ if not _TEST then
         LibStub('AceAddon-3.0'):NewAddon('GimmeTheLoot', 'AceConsole-3.0', 'AceEvent-3.0')
 end
 
-local defaults = {profile = {rolls = {}}}
+local defaults = {profile = {records = {}}}
 
 local options = {
     name = 'GimmeTheLoot',
     handler = GimmeTheLoot,
     type = 'group',
     args = {
-        show = {type = 'execute', name = 'Show', desc = 'Show roll history', func = 'DisplayFrame'},
+        show = {
+            type = 'execute', 
+            name = 'Show', 
+            desc = 'Show roll history', 
+            func = 'DisplayFrame'
+        },
         reset = {
             type = 'execute',
             name = 'Reset',
@@ -21,8 +26,8 @@ local options = {
 }
 
 function GimmeTheLoot:ResetDatabase(_)
-    if self.db.profile.rolls then
-        self.db.profile.rolls = {}
+    if self.db.profile.records then
+        self.db.profile.records = {}
     end
     self:Print('Database reset.')
 end
@@ -40,38 +45,35 @@ function GimmeTheLoot:OnInitialize()
         return GimmeTheLoot:LootRollsComplete(...)
     end)
     self:RegisterEvent('START_LOOT_ROLL', function(_, ...)
-        return GimmeTheLoot:StartLootRoll(...)
+        lootCounter = lootCounter + 1
+        lootCounterMax = lootCounterMax + 1
     end)
 end
 
-function GimmeTheLoot:StartLootRoll(_)
-    lootCounter = lootCounter + 1
-    lootCounterMax = lootCounterMax + 1
-end
 function GimmeTheLoot:LootRollsComplete()
     lootCounter = lootCounter - 1
-    if lootCounter > 0 then return end
+    if lootCounter > 0 then
+         return 
+    end
 
-    local record = {item = {}, rolls = {}}
+    for i=1,lootCounterMax do
+        local record = {item = {}, rolls = {}}
+        local _, itemLink, numPlayers = C_LootHistory.GetItem(i)
+        
+        record.item.link = itemLink
 
-    for a=1,lootCounterMax do
-        --[[local _, itemLink, numPlayers = C_LootHistory.GetItem(a)
-        record['item']['link'] = itemLink
-
-        for i = 1, numPlayers do
-            name, _, rollType, roll, isWinner = C_LootHistory.GetPlayerInfo(a, i)
-            table.insert(record['rolls'], {name = name, rollType = rollType, roll = roll})
+        for p=1, numPlayers do
+            playerName, _, rollType, rollValue, isWinner = C_LootHistory.GetPlayerInfo(i, p)
+            
+            table.rolls = {name = playerName, type = rollType, roll = rollValue}
 
             if isWinner then
-                record['winner'] = name
+                record.winner = playerName
             end
         end
 
-        record['rollCompleted'] = time()
-
-        table.insert(self.db.profile.rolls, record)
-        ]]--
-        self:Print(C_LootHistory.GetItem(a))
+        record.rollCompleted = time()
+        table.insert(self.db.profile.records, record)
     end
 
     lootCounterMax = 0
@@ -96,7 +98,7 @@ function GimmeTheLoot:DisplayFrame()
     scroll:SetLayout('List') -- probably?
     scrollcontainer:AddChild(scroll)
 
-    for _, v in pairs(self.db.profile.rolls) do
+    for _, v in pairs(self.db.profile.records) do
         local row = gui:Create('SimpleGroup')
         row:SetFullWidth(true)
         row:SetLayout('Flow')
@@ -104,7 +106,7 @@ function GimmeTheLoot:DisplayFrame()
 
         local itemName = gui:Create('InteractiveLabel')
         itemName:SetRelativeWidth(.4)
-        itemName:SetText(v['item']['link'])
+        itemName:SetText(v.item.link)
         -- itemName:SetImage(itemInfo[10])
         itemName:SetHighlight({255, 0, 0, 255})
         row:AddChild(itemName)
