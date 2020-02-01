@@ -11,10 +11,10 @@ local options = {
     type = 'group',
     args = {
         show = {
-            type = 'execute', 
-            name = 'Show', 
-            desc = 'Show roll history', 
-            func = 'DisplayFrame'
+            type = 'execute',
+            name = 'Show',
+            desc = 'Show roll history',
+            func = 'DisplayFrame',
         },
         reset = {
             type = 'execute',
@@ -44,16 +44,16 @@ function GimmeTheLoot:OnInitialize()
     self:RegisterEvent('LOOT_ROLLS_COMPLETE', function(_, ...)
         return GimmeTheLoot:LootRollsComplete(...)
     end)
-    self:RegisterEvent('START_LOOT_ROLL', function(_, ...)
+    self:RegisterEvent('START_LOOT_ROLL', function(_, _)
         lootCounter = lootCounter + 1
         lootCounterMax = lootCounterMax + 1
     end)
 end
 
-function GimmeTheLoot:LootRollsComplete()
+function GimmeTheLoot:LootRollsComplete(_)
     lootCounter = lootCounter - 1
     if lootCounter > 0 then
-         return 
+         return
     end
 
     for i=1,lootCounterMax do
@@ -63,9 +63,9 @@ function GimmeTheLoot:LootRollsComplete()
         record.item.link = itemLink
 
         for p=1, numPlayers do
-            playerName, _, rollType, rollValue, isWinner = C_LootHistory.GetPlayerInfo(i, p)
-            
-            table.rolls = {name = playerName, type = rollType, roll = rollValue}
+            local playerName, _, rollType, rollValue, isWinner = C_LootHistory.GetPlayerInfo(i, p)
+
+            record.rolls = {name = playerName, type = rollType, roll = rollValue}
 
             if isWinner then
                 record.winner = playerName
