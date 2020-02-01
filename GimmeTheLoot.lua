@@ -59,13 +59,13 @@ function GimmeTheLoot:LootRollsComplete(_)
     for i=1,lootCounterMax do
         local record = {item = {}, rolls = {}}
         local _, itemLink, numPlayers = C_LootHistory.GetItem(i)
-        
+
         record.item.link = itemLink
 
         for p=1, numPlayers do
             local playerName, _, rollType, rollValue, isWinner = C_LootHistory.GetPlayerInfo(i, p)
 
-            record.rolls = {name = playerName, type = rollType, roll = rollValue}
+            table.insert(record.rolls, {name = playerName, type = rollType, roll = rollValue})
 
             if isWinner then
                 record.winner = playerName
