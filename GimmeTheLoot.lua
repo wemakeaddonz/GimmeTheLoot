@@ -4,19 +4,13 @@ if not _TEST then
 end
 
 local defaults = {profile = {rolls = {}}}
-pendingLootSessions = {}
 
 local options = {
     name = 'GimmeTheLoot',
     handler = GimmeTheLoot,
     type = 'group',
     args = {
-        show = {
-            type = 'execute',
-            name = 'Show',
-            desc = 'Show roll history',
-            func = 'DisplayFrame',
-        },
+        show = {type = 'execute', name = 'Show', desc = 'Show roll history', func = 'DisplayFrame'},
         reset = {
             type = 'execute',
             name = 'Reset',
@@ -27,94 +21,41 @@ local options = {
 }
 
 function GimmeTheLoot:ResetDatabase(_)
-    if self.db.profile.rolls then self.db.profile.rolls = {} end
+    if self.db.profile.rolls then
+        self.db.profile.rolls = {}
+    end
     self:Print('Database reset.')
 end
 
--- TODO: Make this an actual class
---[[
-    An example row in pendingLootSessions is:
-    {
-        item = "|cff1eff00|Hitem:4564::::::1097:639026432:60:::1::::|h[Spiked Club of the Boar]|h|r"
-        rollID = 1
-        rollTime = 1580064360
-        rolls = {
-            greeds = {
-                "Dyamito" = 79
-                "Etsumira" = 42
-                "Congo" = 69
-            },
-            needs = {
-                "Swazzle" = 1
-            },
-            passes = {
-                "Muffinmaam",
-            }
-        },
-        winner = "Swazzle"
-    }
-]]
 function GimmeTheLoot:OnInitialize()
     -- TODO: use self vs GimmeTheLoot syntax
     self.db = LibStub('AceDB-3.0'):New('GTL_DB', defaults)
 
     LibStub('AceConfig-3.0'):RegisterOptionsTable('GimmeTheLoot', options, {'gimmetheloot', 'gtl'})
 
-    self:RegisterEvent('START_LOOT_ROLL', function(_, ...)
-        return GimmeTheLoot:START_LOOT_ROLL(...)
-    end)
-    self:RegisterEvent('LOOT_ITEM_AVAILABLE', function(_, ...)
-        return GimmeTheLoot:LOOT_ITEM_AVAILABLE(...)
-    end)
-    self:RegisterEvent('CHAT_MSG_LOOT', function(_, ...)
-        return GimmeTheLoot:CHAT_MSG_LOOT(...)
-    end)
-    self:RegisterEvent('LOOT_ROLLS_COMPLETE', function(_, ...)
-        return GimmeTheLoot:LOOT_ROLLS_COMPLETE(...)
+    self:RegisterEvent('LOOT_HISTORY_ROLL_COMPLETE', function(_, ...)
+        return GimmeTheLoot:rollcomplete(...)
     end)
 end
 
-function GimmeTheLoot:START_LOOT_ROLL(rollID, _, lootHandle)
-    pendingLootSessions[lootHandle] = {
-        item = nil,
-        rollID = rollID,
-        -- intentionally ignore the rollTime arg as it seems to provide a constant value
-        rollTime = time(),
-        rolls = {greeds = {}, needs = {}, passes = {}},
-        winner = nil,
-    }
-end
+function GimmeTheLoot:rollcomplete()
+    local record = {item = {}, rolls = {}}
 
-function GimmeTheLoot:LOOT_ITEM_AVAILABLE(item, lootHandle)
-    local itemName = GetItemInfo(item)
-    pendingLootSessions[lootHandle]['item'] = itemName
-end
+    local _, itemLink, numPlayers = C_LootHistory.GetItem(1)
+    record['item']['link'] = itemLink
 
-function GimmeTheLoot:CHAT_MSG_LOOT(text)
-    for _, v in pairs(pendingLootSessions) do
-        local lootMsgInfo = {GetLootMsgInfo(text, v['item'])}
-        -- print(text)
-        -- tprint(lootMsgInfo--)
+    for i = 1, numPlayers do
+        name, _, rollType, roll, isWinner = C_LootHistory.GetPlayerInfo(1, i)
+        table.insert(record['rolls'], {name = name, rollType = rollType, roll = roll})
 
-        if lootMsgInfo then
-            if lootMsgInfo[1] == 'greed' then
-                v['rolls']['greeds'][lootMsgInfo[2]] = lootMsgInfo[3]
-            elseif lootMsgInfo[1] == 'need' then
-                v['rolls']['needs'][lootMsgInfo[2]] = lootMsgInfo[3]
-            elseif lootMsgInfo[1] == 'pass' then
-                v['rolls']['passes'][lootMsgInfo[2]] = true
-            elseif lootMsgInfo[1] == 'win' then
-                v['winner'] = lootMsgInfo[2]
-            end
+        if isWinner then
+            record['winner'] = name
         end
     end
-end
 
-function GimmeTheLoot:LOOT_ROLLS_COMPLETE(lootHandle)
-    local session = pendingLootSessions[lootHandle]
-    table.insert(self.db.profile.rolls, session)
-    pendingLootSessions[lootHandle] = nil
-    return session
+    record['rollCompleted'] = time()
+
+    table.insert(self.db.profile.rolls, record)
 end
 
 function GimmeTheLoot:DisplayFrame()
@@ -144,51 +85,20 @@ function GimmeTheLoot:DisplayFrame()
 
         local itemName = gui:Create('InteractiveLabel')
         itemName:SetRelativeWidth(.4)
-        --itemName:SetText(v['item'])
-        local itemInfo = {GetItemInfo(18805)}
-        itemName:SetText(itemInfo[2])
-        --itemName:SetImage(itemInfo[10])
+        itemName:SetText(v['item']['link'])
+        -- itemName:SetImage(itemInfo[10])
         itemName:SetHighlight({255, 0, 0, 255})
         row:AddChild(itemName)
 
-        local rollID = gui:Create('Label')
-        rollID:SetRelativeWidth(.1)
-        rollID:SetText(v['rollID'])
-        row:AddChild(rollID)
-
         local rollTime = gui:Create('Label')
         rollTime:SetRelativeWidth(.25)
-        rollTime:SetText(date('%b %d %Y %I:%M %p', v['rollTime']))
+        rollTime:SetText(date('%b %d %Y %I:%M %p', v['rollCompleted']))
         row:AddChild(rollTime)
 
         local winner = gui:Create('Label')
         winner:SetRelativeWidth(.25)
         winner:SetText(v['winner'])
         row:AddChild(winner)
-    end
-end
-
--- utility functions
-function GetLootMsgInfo(msg, item)
-    local passer, needer, greeder, roll, winner
-    passer = string.match(msg, '%s(.+) passed on: .+' .. item)
-    if passer then
-        return 'pass', passer
-    end
-
-    roll, greeder = string.match(msg, 'Greed Roll %- (%d+) for .+' .. item .. '.+by (.+)')
-    if greeder then
-        return 'greed', greeder, tonumber(roll)
-    end
-
-    roll, needer = string.match(msg, 'Need Roll %- (%d+) for .+' .. item .. '.+ by (.+)')
-    if needer then
-        return 'need', needer, tonumber(roll)
-    end
-
-    winner = string.match(msg, '(.+) won: .+' .. item)
-    if winner then
-        return 'win', winner
     end
 end
 
