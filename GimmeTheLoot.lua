@@ -53,16 +53,16 @@ end
 function GimmeTheLoot:LootRollsComplete(_)
     lootCounter = lootCounter - 1
     if lootCounter > 0 then
-         return
+        return
     end
 
-    for i=1,lootCounterMax do
+    for i = 1, lootCounterMax do
         local record = {item = {}, rolls = {}}
         local _, itemLink, numPlayers = C_LootHistory.GetItem(i)
 
         record.item.link = itemLink
 
-        for p=1, numPlayers do
+        for p = 1, numPlayers do
             local playerName, _, rollType, rollValue, isWinner = C_LootHistory.GetPlayerInfo(i, p)
 
             table.insert(record.rolls, {name = playerName, type = rollType, roll = rollValue})
@@ -79,7 +79,52 @@ function GimmeTheLoot:LootRollsComplete(_)
     lootCounterMax = 0
 end
 
+function GimmeTheLoot:SearchRecords(text)
+    if not text then
+        return self.db.profile.records
+    end
+
+    local results = {}
+
+    for _, item in pairs(self.db.profile.records) do
+        local itemName = GetItemInfo(item.item.link)
+        local lowerItemName = itemName and string.lower(itemName)
+
+        if lowerItemName and string.find(lowerItemName, string.lower(text)) then
+            table.insert(results, item)
+        end
+    end
+
+    return results
+end
+
 function GimmeTheLoot:DisplayFrame()
+    --[[
++--+frame+-------------------------------------------------------+
+|----+globalContainer+-------------------------------------------|
+||  +--+utilityContainer+-----------------------------------+   ||
+||  |                                                       |   ||
+||  |                  searchBox                            |   ||
+||  +-------------------------------------------------------+   ||
+||                                                              ||
+||  +-+resultsContainer+-----------------------------------+    ||
+||  | +---------------------------+scrollContainer+------+ |    ||
+||  | |                                                  | |    ||
+||  | | +--recordContainer-----------------------------+ | |    ||
+||  | | |                                              | | |    ||
+||  | | |                                              | | |    ||
+||  | | +----------------------------------------------+ | |    ||
+||  | |                                                  | |    ||
+||  | |                                                  | |    ||
+||  | |                                                  | |    ||
+||  | |                                                  | |    ||
+||  | |                                                  | |    ||
+||  | |                                                  | |    ||
+||  | +--------------------------------------------------+ |    ||
+||  +------------------------------------------------------+    ||
+|----------------------------------------------------------------|
++----------------------------------------------------------------+
+]]
     local gui = LibStub('AceGUI-3.0')
     local frame = gui:Create('Frame')
     frame:SetTitle('Roll History')
@@ -88,17 +133,38 @@ function GimmeTheLoot:DisplayFrame()
     end)
     frame:SetLayout('Fill')
 
-    local scrollcontainer = gui:Create('SimpleGroup') -- "InlineGroup" is also good
-    scrollcontainer:SetFullWidth(true)
-    scrollcontainer:SetFullHeight(true) -- probably?
-    scrollcontainer:SetLayout('Fill') -- important!
-    frame:AddChild(scrollcontainer)
+    local globalContainer = gui:Create('SimpleGroup')
+    frame:AddChild(globalContainer)
 
-    local scroll = gui:Create('ScrollFrame')
-    scroll:SetLayout('List') -- probably?
-    scrollcontainer:AddChild(scroll)
+    local utilityContainer = gui:Create('SimpleGroup')
+    globalContainer:AddChild(utilityContainer)
 
-    for _, v in pairs(self.db.profile.records) do
+    local searchBox = gui:Create('EditBox')
+    searchBox:SetLabel('search')
+    searchBox:DisableButton(true)
+    searchBox:SetMaxLetters(20)
+    searchBox:SetCallback('OnTextChanged', function(_, _, text)
+        scrollContainer:ReleaseChildren()
+        self:RenderDisplay(gui, scrollContainer, self:SearchRecords(text))
+    end)
+    utilityContainer:AddChild(searchBox)
+
+    local resultsContainer = gui:Create('SimpleGroup') -- "InlineGroup" is also good
+    resultsContainer:SetFullWidth(true)
+    resultsContainer:SetFullHeight(true) -- probably?
+    resultsContainer:SetLayout('Fill') -- important!
+    globalContainer:AddChild(resultsContainer)
+
+    scrollContainer = gui:Create('ScrollFrame')
+    scrollContainer:SetLayout('List') -- probably?
+    scrollContainer:SetFullHeight(true)
+    resultsContainer:AddChild(scrollContainer)
+
+    self:RenderDisplay(gui, scrollContainer, self.db.profile.records)
+end
+
+function GimmeTheLoot:RenderDisplay(gui, scroll, records)
+    for _, v in pairs(records) do
         local row = gui:Create('SimpleGroup')
         row:SetFullWidth(true)
         row:SetLayout('Flow')
@@ -107,7 +173,6 @@ function GimmeTheLoot:DisplayFrame()
         local itemName = gui:Create('InteractiveLabel')
         itemName:SetRelativeWidth(.4)
         itemName:SetText(v.item.link)
-        -- itemName:SetImage(itemInfo[10])
         itemName:SetHighlight({255, 0, 0, 255})
         row:AddChild(itemName)
 
