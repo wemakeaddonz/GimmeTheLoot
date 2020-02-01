@@ -10,12 +10,7 @@ local options = {
     handler = GimmeTheLoot,
     type = 'group',
     args = {
-        show = {
-            type = 'execute',
-            name = 'Show',
-            desc = 'Show roll history',
-            func = 'DisplayFrame',
-        },
+        show = {type = 'execute', name = 'Show', desc = 'Show roll history', func = 'DisplayFrame'},
         reset = {
             type = 'execute',
             name = 'Reset',
@@ -100,91 +95,92 @@ end
 
 function GimmeTheLoot:DisplayFrame()
     --[[
-+--+frame+-------------------------------------------------------+
-|----+globalContainer+-------------------------------------------|
-||  +--+utilityContainer+-----------------------------------+   ||
-||  |                                                       |   ||
-||  |                  searchBox                            |   ||
-||  +-------------------------------------------------------+   ||
-||                                                              ||
-||  +-+resultsContainer+-----------------------------------+    ||
-||  | +---------------------------+scrollContainer+------+ |    ||
-||  | |                                                  | |    ||
-||  | | +--recordContainer-----------------------------+ | |    ||
-||  | | |                                              | | |    ||
-||  | | |                                              | | |    ||
-||  | | +----------------------------------------------+ | |    ||
-||  | |                                                  | |    ||
-||  | |                                                  | |    ||
-||  | |                                                  | |    ||
-||  | |                                                  | |    ||
-||  | |                                                  | |    ||
-||  | |                                                  | |    ||
-||  | +--------------------------------------------------+ |    ||
-||  +------------------------------------------------------+    ||
-|----------------------------------------------------------------|
-+----------------------------------------------------------------+
-]]
++-mainFrame (Frame)---------------------------------------------+
+|---mainContainer (SimpleGroup)---------------------------------|
+|| +--utilityContainer (SimpleGroup)-------------------------+ ||
+|| |                                                         | ||
+|| |  +-searchBox (EditBox)--+                               | ||
+|| |  |                      |                               | ||
+|| |  +----------------------+                               | ||
+|| +---------------------------------------------------------+ ||
+||                                                             ||
+|| +-resultsContainer (SimpleGroup)--------------------------+ ||
+|| |                                                         | ||
+|| | +--recordsContainer (ScrollFrame)---------------------+ | ||
+|| | |                                                     | | ||
+|| | | +--recordContainer (SimpleGroup)------------------+ | | ||
+|| | | |                                                 | | | ||
+|| | | |                                                 | | | ||
+|| | | +-------------------------------------------------+ | | ||
+|| | |                                                     | | ||
+|| | |                                                     | | ||
+|| | |                                                     | | ||
+|| | |                                                     | | ||
+|| | +-----------------------------------------------------+ | ||
+|| +---------------------------------------------------------+ ||
+|---------------------------------------------------------------|
++---------------------------------------------------------------+
+    --]]
     local gui = LibStub('AceGUI-3.0')
-    local frame = gui:Create('Frame')
-    frame:SetTitle('Roll History')
-    frame:SetCallback('OnClose', function(widget)
+    local mainFrame = gui:Create('Frame')
+    mainFrame:SetTitle('Roll History')
+    mainFrame:SetCallback('OnClose', function(widget)
         gui:Release(widget)
     end)
-    frame:SetLayout('Fill')
+    mainFrame:SetLayout('Fill')
 
-    local globalContainer = gui:Create('SimpleGroup')
-    frame:AddChild(globalContainer)
+    local mainContainer = gui:Create('SimpleGroup')
+    mainFrame:AddChild(mainContainer)
 
     local utilityContainer = gui:Create('SimpleGroup')
-    globalContainer:AddChild(utilityContainer)
+    mainContainer:AddChild(utilityContainer)
 
     local searchBox = gui:Create('EditBox')
     searchBox:SetLabel('search')
     searchBox:DisableButton(true)
     searchBox:SetMaxLetters(20)
     searchBox:SetCallback('OnTextChanged', function(_, _, text)
-        scrollContainer:ReleaseChildren()
-        self:RenderDisplay(gui, scrollContainer, self:SearchRecords(text))
+        recordsContainer:ReleaseChildren()
+        self:RenderDisplay(gui, recordsContainer, self:SearchRecords(text))
     end)
     utilityContainer:AddChild(searchBox)
 
-    local resultsContainer = gui:Create('SimpleGroup') -- "InlineGroup" is also good
+    local resultsContainer = gui:Create('SimpleGroup')
     resultsContainer:SetFullWidth(true)
-    resultsContainer:SetFullHeight(true) -- probably?
-    resultsContainer:SetLayout('Fill') -- important!
-    globalContainer:AddChild(resultsContainer)
+    resultsContainer:SetFullHeight(true)
+    resultsContainer:SetLayout('Fill')
+    mainContainer:AddChild(resultsContainer)
 
-    scrollContainer = gui:Create('ScrollFrame')
-    scrollContainer:SetLayout('List') -- probably?
-    scrollContainer:SetFullHeight(true)
-    resultsContainer:AddChild(scrollContainer)
+    recordsContainer = gui:Create('ScrollFrame')
+    recordsContainer:SetLayout('List')
+    recordsContainer:SetFullHeight(true)
+    resultsContainer:AddChild(recordsContainer)
 
-    self:RenderDisplay(gui, scrollContainer, self.db.profile.records)
+    self:RenderDisplay(gui, recordsContainer, self.db.profile.records)
 end
 
 function GimmeTheLoot:RenderDisplay(gui, scroll, records)
     for _, v in pairs(records) do
-        local row = gui:Create('SimpleGroup')
-        row:SetFullWidth(true)
-        row:SetLayout('Flow')
-        scroll:AddChild(row)
+        local recordContainer = gui:Create('SimpleGroup')
+        recordContainer:SetFullWidth(true)
+        recordContainer:SetLayout('Flow')
+        scroll:AddChild(recordContainer)
 
         local itemName = gui:Create('InteractiveLabel')
         itemName:SetRelativeWidth(.4)
         itemName:SetText(v.item.link)
         itemName:SetHighlight({255, 0, 0, 255})
-        row:AddChild(itemName)
+        recordContainer:AddChild(itemName)
 
         local rollTime = gui:Create('Label')
         rollTime:SetRelativeWidth(.25)
         rollTime:SetText(date('%b %d %Y %I:%M %p', v['rollCompleted']))
-        row:AddChild(rollTime)
+        recordContainer:AddChild(rollTime)
 
         local winner = gui:Create('Label')
         winner:SetRelativeWidth(.25)
         winner:SetText(v['winner'])
-        row:AddChild(winner)
+        recordContainer:AddChild(winner)
     end
 end
 
