@@ -27,35 +27,54 @@ function GimmeTheLoot:ResetDatabase(_)
     self:Print('Database reset.')
 end
 
+local lootCounter = 0
+local lootCounterMax = 0
+
 function GimmeTheLoot:OnInitialize()
     -- TODO: use self vs GimmeTheLoot syntax
     self.db = LibStub('AceDB-3.0'):New('GTL_DB', defaults)
 
     LibStub('AceConfig-3.0'):RegisterOptionsTable('GimmeTheLoot', options, {'gimmetheloot', 'gtl'})
 
-    self:RegisterEvent('LOOT_HISTORY_ROLL_COMPLETE', function(_, ...)
-        return GimmeTheLoot:rollcomplete(...)
+    self:RegisterEvent('LOOT_ROLLS_COMPLETE', function(_, ...)
+        return GimmeTheLoot:LootRollsComplete(...)
+    end)
+    self:RegisterEvent('START_LOOT_ROLL', function(_, ...)
+        return GimmeTheLoot:StartLootRoll(...)
     end)
 end
 
-function GimmeTheLoot:rollcomplete()
+function GimmeTheLoot:StartLootRoll(_)
+    lootCounter = lootCounter + 1
+    lootCounterMax = lootCounterMax + 1
+end
+function GimmeTheLoot:LootRollsComplete()
+    lootCounter = lootCounter - 1
+    if lootCounter > 0 then return end
+
     local record = {item = {}, rolls = {}}
 
-    local _, itemLink, numPlayers = C_LootHistory.GetItem(1)
-    record['item']['link'] = itemLink
+    for a=1,lootCounterMax do
+        --[[local _, itemLink, numPlayers = C_LootHistory.GetItem(a)
+        record['item']['link'] = itemLink
 
-    for i = 1, numPlayers do
-        name, _, rollType, roll, isWinner = C_LootHistory.GetPlayerInfo(1, i)
-        table.insert(record['rolls'], {name = name, rollType = rollType, roll = roll})
+        for i = 1, numPlayers do
+            name, _, rollType, roll, isWinner = C_LootHistory.GetPlayerInfo(a, i)
+            table.insert(record['rolls'], {name = name, rollType = rollType, roll = roll})
 
-        if isWinner then
-            record['winner'] = name
+            if isWinner then
+                record['winner'] = name
+            end
         end
+
+        record['rollCompleted'] = time()
+
+        table.insert(self.db.profile.rolls, record)
+        ]]--
+        self:Print(C_LootHistory.GetItem(a))
     end
 
-    record['rollCompleted'] = time()
-
-    table.insert(self.db.profile.rolls, record)
+    lootCounterMax = 0
 end
 
 function GimmeTheLoot:DisplayFrame()
