@@ -54,8 +54,11 @@ function GimmeTheLoot:LootRollsComplete(_)
     for i = 1, lootCounterMax do
         local record = {item = {}, rolls = {}}
         local _, itemLink, numPlayers = C_LootHistory.GetItem(i)
+        local itemName, _, itemQuality = GetItemInfo(itemLink)
 
         record.item.link = itemLink
+        record.item.name = itemName
+        record.item.quality = itemQuality
 
         for p = 1, numPlayers do
             local playerName, _, rollType, rollValue, isWinner = C_LootHistory.GetPlayerInfo(i, p)
