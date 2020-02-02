@@ -3,20 +3,14 @@ if not _TEST then
         LibStub('AceAddon-3.0'):NewAddon('GimmeTheLoot', 'AceConsole-3.0', 'AceEvent-3.0')
 end
 
-local defaults = {profile = {rolls = {}}}
-pendingLootSessions = {}
+local defaults = {profile = {records = {}}}
 
 local options = {
     name = 'GimmeTheLoot',
     handler = GimmeTheLoot,
     type = 'group',
     args = {
-        show = {
-            type = 'execute',
-            name = 'Show',
-            desc = 'Show roll history',
-            func = 'DisplayFrame',
-        },
+        show = {type = 'execute', name = 'Show', desc = 'Show roll history', func = 'DisplayFrame'},
         reset = {
             type = 'execute',
             name = 'Reset',
@@ -27,142 +21,205 @@ local options = {
 }
 
 function GimmeTheLoot:ResetDatabase(_)
-    if self.db.profile.rolls then self.db.profile.rolls = {} end
+    if self.db.profile.records then
+        self.db.profile.records = {}
+    end
     self:Print('Database reset.')
 end
 
--- TODO: Make this an actual class
---[[
-    An example row in pendingLootSessions is:
-    {
-        item = "|cff1eff00|Hitem:4564::::::1097:639026432:60:::1::::|h[Spiked Club of the Boar]|h|r"
-        rollID = 1
-        rollTime = 1580064360
-        rolls = {
-            greeds = {
-                "Dyamito" = 79
-                "Etsumira" = 42
-                "Congo" = 69
-            },
-            needs = {
-                "Swazzle" = 1
-            },
-            passes = {
-                "Muffinmaam",
-            }
-        },
-        winner = "Swazzle"
-    }
-]]
+local lootCounter = 0
+local lootCounterMax = 0
+
 function GimmeTheLoot:OnInitialize()
     -- TODO: use self vs GimmeTheLoot syntax
     self.db = LibStub('AceDB-3.0'):New('GTL_DB', defaults)
 
     LibStub('AceConfig-3.0'):RegisterOptionsTable('GimmeTheLoot', options, {'gimmetheloot', 'gtl'})
 
-    self:RegisterEvent('START_LOOT_ROLL', function(_, ...)
-        return GimmeTheLoot:START_LOOT_ROLL(...)
-    end)
-    self:RegisterEvent('LOOT_ITEM_AVAILABLE', function(_, ...)
-        return GimmeTheLoot:LOOT_ITEM_AVAILABLE(...)
-    end)
-    self:RegisterEvent('CHAT_MSG_LOOT', function(_, ...)
-        return GimmeTheLoot:CHAT_MSG_LOOT(...)
-    end)
     self:RegisterEvent('LOOT_ROLLS_COMPLETE', function(_, ...)
-        return GimmeTheLoot:LOOT_ROLLS_COMPLETE(...)
+        return GimmeTheLoot:LootRollsComplete(...)
+    end)
+    self:RegisterEvent('START_LOOT_ROLL', function(_, _)
+        lootCounter = lootCounter + 1
+        lootCounterMax = lootCounterMax + 1
     end)
 end
 
-function GimmeTheLoot:START_LOOT_ROLL(rollID, _, lootHandle)
-    pendingLootSessions[lootHandle] = {
-        item = nil,
-        rollID = rollID,
-        -- intentionally ignore the rollTime arg as it seems to provide a constant value
-        rollTime = time(),
-        rolls = {greeds = {}, needs = {}, passes = {}},
-        winner = nil,
-    }
+function GimmeTheLoot:LootRollsComplete(_)
+    lootCounter = lootCounter - 1
+    if lootCounter > 0 then
+        return
+    end
+
+    for i = 1, lootCounterMax do
+        local record = {item = {}, rolls = {}}
+        local _, itemLink, numPlayers = C_LootHistory.GetItem(i)
+        local itemName, _, itemQuality = GetItemInfo(itemLink)
+
+        record.item.link = itemLink
+        record.item.name = itemName
+        record.item.quality = itemQuality
+
+        for p = 1, numPlayers do
+            local playerName, _, rollType, rollValue, isWinner = C_LootHistory.GetPlayerInfo(i, p)
+
+            table.insert(record.rolls, {name = playerName, type = rollType, roll = rollValue})
+
+            if isWinner then
+                record.winner = playerName
+            end
+        end
+
+        record.rollCompleted = time()
+        table.insert(self.db.profile.records, record)
+    end
+
+    lootCounterMax = 0
 end
 
-function GimmeTheLoot:LOOT_ITEM_AVAILABLE(item, lootHandle)
-    local itemName = GetItemInfo(item)
-    pendingLootSessions[lootHandle]['item'] = itemName
+-- consider memoizing
+function GimmeTheLoot:SearchMatchItemText(text, record)
+    return not text or text == '' or string.find(string.lower(record.item.name), string.lower(text))
 end
 
-function GimmeTheLoot:CHAT_MSG_LOOT(text)
-    for _, v in pairs(pendingLootSessions) do
-        local lootMsgInfo = {GetLootMsgInfo(text, v['item'])}
-        -- print(text)
-        -- tprint(lootMsgInfo--)
+-- consider memoizing
+function GimmeTheLoot:SearchMatchItemQuality(quality, record)
+    return not quality or next(quality) == nil or quality[record.item.quality]
+end
 
-        if lootMsgInfo then
-            if lootMsgInfo[1] == 'greed' then
-                v['rolls']['greeds'][lootMsgInfo[2]] = lootMsgInfo[3]
-            elseif lootMsgInfo[1] == 'need' then
-                v['rolls']['needs'][lootMsgInfo[2]] = lootMsgInfo[3]
-            elseif lootMsgInfo[1] == 'pass' then
-                v['rolls']['passes'][lootMsgInfo[2]] = true
-            elseif lootMsgInfo[1] == 'win' then
-                v['winner'] = lootMsgInfo[2]
+function GimmeTheLoot:SearchRecords(search)
+    local search, results = search or {}, {}
+
+    for _, record in pairs(self.db.profile.records) do
+        if record.item.name and record.item.quality then
+            if self:SearchMatchItemText(search.text, record) and
+                self:SearchMatchItemQuality(search.quality, record) then
+                table.insert(results, record)
             end
         end
     end
-end
 
-function GimmeTheLoot:LOOT_ROLLS_COMPLETE(lootHandle)
-    table.insert(self.db.profile.rolls, pendingLootSessions[lootHandle])
-    return pendingLootSessions[lootHandle]
+    return results
 end
 
 function GimmeTheLoot:DisplayFrame()
+    --[[
++-mainFrame (Frame)---------------------------------------------+
+|---mainContainer (SimpleGroup)---------------------------------|
+|| +--utilityContainer (SimpleGroup)-------------------------+ ||
+|| |                                                         | ||
+|| |  +-searchBox (EditBox)--+                               | ||
+|| |  |                      |                               | ||
+|| |  +----------------------+                               | ||
+|| +---------------------------------------------------------+ ||
+||                                                             ||
+|| +-resultsContainer (SimpleGroup)--------------------------+ ||
+|| |                                                         | ||
+|| | +--recordsContainer (ScrollFrame)---------------------+ | ||
+|| | |                                                     | | ||
+|| | | +--recordContainer (SimpleGroup)------------------+ | | ||
+|| | | |                                                 | | | ||
+|| | | |                                                 | | | ||
+|| | | +-------------------------------------------------+ | | ||
+|| | |                                                     | | ||
+|| | |                                                     | | ||
+|| | |                                                     | | ||
+|| | |                                                     | | ||
+|| | +-----------------------------------------------------+ | ||
+|| +---------------------------------------------------------+ ||
+|---------------------------------------------------------------|
++---------------------------------------------------------------+
+    --]]
     local gui = LibStub('AceGUI-3.0')
-    local frame = gui:Create('Frame')
-    frame:SetTitle('Roll History')
-    frame:SetCallback('OnClose', function(widget)
+    local mainFrame = gui:Create('Frame')
+    mainFrame:SetTitle('Roll History')
+    mainFrame:SetCallback('OnClose', function(widget)
         gui:Release(widget)
     end)
-    frame:SetLayout('Fill')
+    mainFrame:SetLayout('Fill')
 
-    local scrollcontainer = gui:Create('SimpleGroup') -- "InlineGroup" is also good
-    scrollcontainer:SetFullWidth(true)
-    scrollcontainer:SetFullHeight(true) -- probably?
-    scrollcontainer:SetLayout('Fill') -- important!
-    frame:AddChild(scrollcontainer)
+    local mainContainer = gui:Create('SimpleGroup')
+    mainContainer:SetLayout('Flow')
+    mainFrame:AddChild(mainContainer)
 
-    local scroll = gui:Create('ScrollFrame')
-    scroll:SetLayout('Flow') -- probably?
-    scrollcontainer:AddChild(scroll)
+    local utilityContainer = gui:Create('SimpleGroup')
+    utilityContainer:SetLayout('Flow')
+    mainContainer:AddChild(utilityContainer)
 
-    for _, v in pairs(self.db.profile.rolls) do
-        local label = gui:Create('Label')
-        label:SetText(v['item'] .. v['winner'] .. date('%m/%d/%y %H:%M:%S', v['rollTime']))
-        scroll:AddChild(label)
-    end
+    gtlSearch = {quality = {}}
 
+    local searchBox = gui:Create('EditBox')
+    searchBox:SetLabel('search')
+    searchBox:DisableButton(true)
+    searchBox:SetMaxLetters(20)
+    searchBox:SetCallback('OnTextChanged', function(_, _, text)
+        gtlSearch.text = text
+        recordsContainer:ReleaseChildren()
+        self:RenderDisplay(gui, recordsContainer, self:SearchRecords(gtlSearch))
+    end)
+    utilityContainer:AddChild(searchBox)
+
+    local qualityDropdown = gui:Create('Dropdown')
+    qualityDropdown:SetList({
+        [2] = '|cff00ff00Uncommon',
+        [3] = '|cff0000ffRare',
+        [4] = '|cffa335eeEpic',
+        [5] = '|cffff8000Legendary',
+    })
+    qualityDropdown:SetMultiselect(true)
+    qualityDropdown:SetCallback('OnValueChanged', function(_, _, key, checked)
+        gtlSearch.quality[key] = checked or nil
+        recordsContainer:ReleaseChildren()
+        self:RenderDisplay(gui, recordsContainer, self:SearchRecords(gtlSearch))
+    end)
+    utilityContainer:AddChild(qualityDropdown)
+
+    local resultsContainer = gui:Create('InlineGroup')
+    resultsContainer:SetTitle('History:')
+    resultsContainer:SetFullWidth(true)
+    resultsContainer:SetFullHeight(true)
+    resultsContainer:SetLayout('Fill')
+    mainContainer:AddChild(resultsContainer)
+
+    recordsContainer = gui:Create('ScrollFrame')
+    recordsContainer:SetLayout('List')
+    recordsContainer:SetFullHeight(true)
+    resultsContainer:AddChild(recordsContainer)
+
+    self:RenderDisplay(gui, recordsContainer, self:SearchRecords())
 end
 
--- utility functions
-function GetLootMsgInfo(msg, item)
-    local passer, needer, greeder, roll, winner
-    passer = string.match(msg, '%s(.+) passed on: .+' .. item)
-    if passer then
-        return 'pass', passer
-    end
+function GimmeTheLoot:RenderDisplay(gui, scroll, records)
+    for _, v in pairs(records) do
+        local recordContainer = gui:Create('SimpleGroup')
+        recordContainer:SetFullWidth(true)
+        recordContainer:SetLayout('Flow')
+        scroll:AddChild(recordContainer)
 
-    roll, greeder = string.match(msg, 'Greed Roll %- (%d+) for .+' .. item .. '.+by (.+)')
-    if greeder then
-        return 'greed', greeder, tonumber(roll)
-    end
+        local itemName = gui:Create('InteractiveLabel')
+        itemName:SetRelativeWidth(.4)
+        itemName:SetText(v.item.link)
+        itemName:SetHighlight({255, 0, 0, 255})
+        itemName:SetUserData('text', v.item.link)
+        itemName:SetCallback('OnEnter', function(widget)
+            GameTooltip:SetOwner(widget.frame, 'ANCHOR_LEFT')
+            GameTooltip:SetHyperlink(widget:GetUserData('text'))
+            GameTooltip:Show()
+        end)
+        itemName:SetCallback('OnLeave', function()
+            GameTooltip:Hide()
+        end)
+        recordContainer:AddChild(itemName)
 
-    roll, needer = string.match(msg, 'Need Roll %- (%d+) for .+' .. item .. '.+ by (.+)')
-    if needer then
-        return 'need', needer, tonumber(roll)
-    end
+        local rollTime = gui:Create('Label')
+        rollTime:SetRelativeWidth(.25)
+        rollTime:SetText(date('%b %d %Y %I:%M %p', v['rollCompleted']))
+        recordContainer:AddChild(rollTime)
 
-    winner = string.match(msg, '(.+) won: .+' .. item)
-    if winner then
-        return 'win', winner
+        local winner = gui:Create('Label')
+        winner:SetRelativeWidth(.25)
+        winner:SetText(v['winner'])
+        recordContainer:AddChild(winner)
     end
 end
 
