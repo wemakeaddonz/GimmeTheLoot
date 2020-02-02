@@ -77,19 +77,25 @@ function GimmeTheLoot:LootRollsComplete(_)
     lootCounterMax = 0
 end
 
-function GimmeTheLoot:SearchRecords(text)
-    if not text then
-        return self.db.profile.records
-    end
+-- consider memoizing
+function GimmeTheLoot:SearchMatchItemText(text, record)
+    return not text or text == '' or string.find(string.lower(record.item.name), string.lower(text))
+end
 
-    local results = {}
+-- consider memoizing
+function GimmeTheLoot:SearchMatchItemQuality(quality, record)
+    return not quality or next(quality) == nil or quality[record.item.quality]
+end
 
-    for _, item in pairs(self.db.profile.records) do
-        local itemName = GetItemInfo(item.item.link)
-        local lowerItemName = itemName and string.lower(itemName)
+function GimmeTheLoot:SearchRecords(search)
+    local search, results = search or {}, {}
 
-        if lowerItemName and string.find(lowerItemName, string.lower(text)) then
-            table.insert(results, item)
+    for _, record in pairs(self.db.profile.records) do
+        if record.item.name and record.item.quality then
+            if self:SearchMatchItemText(search.text, record) and
+                self:SearchMatchItemQuality(search.quality, record) then
+                table.insert(results, record)
+            end
         end
     end
 
