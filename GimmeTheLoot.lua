@@ -146,18 +146,36 @@ function GimmeTheLoot:DisplayFrame()
     utilityContainer:SetLayout('Flow')
     mainContainer:AddChild(utilityContainer)
 
+    gtlSearch = {quality = {}}
+
     local searchBox = gui:Create('EditBox')
     searchBox:SetLabel('search')
     searchBox:DisableButton(true)
     searchBox:SetMaxLetters(20)
     searchBox:SetCallback('OnTextChanged', function(_, _, text)
+        gtlSearch.text = text
         recordsContainer:ReleaseChildren()
-        self:RenderDisplay(gui, recordsContainer, self:SearchRecords(text))
+        self:RenderDisplay(gui, recordsContainer, self:SearchRecords(gtlSearch))
     end)
     utilityContainer:AddChild(searchBox)
 
+    local qualityDropdown = gui:Create('Dropdown')
+    qualityDropdown:SetList({
+        [2] = '|cff00ff00Uncommon',
+        [3] = '|cff0000ffRare',
+        [4] = '|cffa335eeEpic',
+        [5] = '|cffff8000Legendary',
+    })
+    qualityDropdown:SetMultiselect(true)
+    qualityDropdown:SetCallback('OnValueChanged', function(_, _, key, checked)
+        gtlSearch.quality[key] = checked or nil
+        recordsContainer:ReleaseChildren()
+        self:RenderDisplay(gui, recordsContainer, self:SearchRecords(gtlSearch))
+    end)
+    utilityContainer:AddChild(qualityDropdown)
+
     local resultsContainer = gui:Create('InlineGroup')
-    resultsContainer:SetTitle("History:")
+    resultsContainer:SetTitle('History:')
     resultsContainer:SetFullWidth(true)
     resultsContainer:SetFullHeight(true)
     resultsContainer:SetLayout('Fill')
@@ -168,7 +186,7 @@ function GimmeTheLoot:DisplayFrame()
     recordsContainer:SetFullHeight(true)
     resultsContainer:AddChild(recordsContainer)
 
-    self:RenderDisplay(gui, recordsContainer, self.db.profile.records)
+    self:RenderDisplay(gui, recordsContainer, self:SearchRecords())
 end
 
 function GimmeTheLoot:RenderDisplay(gui, scroll, records)
@@ -184,7 +202,7 @@ function GimmeTheLoot:RenderDisplay(gui, scroll, records)
         itemName:SetHighlight({255, 0, 0, 255})
         itemName:SetUserData('text', v.item.link)
         itemName:SetCallback('OnEnter', function(widget)
-            GameTooltip:SetOwner(widget.frame, "ANCHOR_LEFT")
+            GameTooltip:SetOwner(widget.frame, 'ANCHOR_LEFT')
             GameTooltip:SetHyperlink(widget:GetUserData('text'))
             GameTooltip:Show()
         end)
