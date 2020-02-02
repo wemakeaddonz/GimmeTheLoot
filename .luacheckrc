@@ -1,7 +1,16 @@
---std = "min"
-
-globals = {"GimmeTheLoot", "LibStub", "GetItemInfo", "GetLootMsgInfo", "tprint", "pendingLootSessions"}
-read_globals = {"_TEST", "time", "date"}
+-- std = "min"
+globals = {
+    'GimmeTheLoot',
+    'LibStub',
+    'GetItemInfo',
+    'GetLootMsgInfo',
+    'tprint',
+    'pendingLootSessions',
+    'gtlSearch',
+    'FakeRollSession',
+    'recordsContainer',
+}
+read_globals = {'_TEST', 'time', 'date', 'C_LootHistory', 'GameTooltip'}
 
 max_line_length = 100
 max_cyclomatic_complexity = 10
@@ -11,4 +20,4 @@ codes = true
 
 self = false
 
-exclude_files = {"Libs"}
+exclude_files = {'Libs'}

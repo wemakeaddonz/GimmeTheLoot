@@ -88,7 +88,8 @@ function GimmeTheLoot:SearchMatchItemQuality(quality, record)
 end
 
 function GimmeTheLoot:SearchRecords(search)
-    local search, results = search or {}, {}
+    local results = {}
+    search = search or {}
 
     for _, record in pairs(self.db.profile.records) do
         if record.item.name and record.item.quality then

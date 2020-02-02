@@ -19,7 +19,7 @@ function FakeRollSession(numRollers, item)
     assert(numRollers >= 1 and numRollers <= 5)
     local session = {rolls = {}, item = item}
 
-    for i = 0, numRollers do
+    for _ = 0, numRollers do
         table.insert(session.rolls, {
             name = fakeRollers[math.random(#fakeRollers)],
             type = math.random(0, 3),
@@ -38,7 +38,7 @@ require 'GimmeTheLoot'
 describe('record searching', function()
     it('should match a record with a substring', function()
         local record = FakeRollSession(5, {
-            link = '\124cffa335ee\124Hitem:29037::::::::120:::::\124h[Cyclone Shoulderguards]\124h\124r',
+            link = '...Cyclone Shoulderguards...',
             name = 'Cyclone Shoulderguards',
             quality = 4,
         })
@@ -49,7 +49,7 @@ describe('record searching', function()
 
     it('should match a record with a differently cased substring', function()
         local record = FakeRollSession(5, {
-            link = '\124cffa335ee\124Hitem:29037::::::::120:::::\124h[Cyclone Shoulderguards]\124h\124r',
+            link = '...Cyclone Shoulderguards...',
             name = 'Cyclone Shoulderguards',
             quality = 4,
         })
@@ -60,7 +60,7 @@ describe('record searching', function()
 
     it('should match a record with a specific quality level', function()
         local record = FakeRollSession(5, {
-            link = '\124cffa335ee\124Hitem:29037::::::::120:::::\124h[Cyclone Shoulderguards]\124h\124r',
+            link = '...Cyclone Shoulderguards...',
             name = 'Cyclone Shoulderguards',
             quality = 4,
         })
@@ -80,14 +80,13 @@ end)
 
 describe('record searching over multiple records', function()
     it('should match a record with a substring', function()
-
         table.insert(_G.GimmeTheLoot.db.profile.records, FakeRollSession(5, {
-            link = '\124cffa335ee\124Hitem:29037::::::::120:::::\124h[Cyclone Shoulderguards]\124h\124r',
+            link = '...Cyclone Shoulderguards...',
             name = 'Cyclone Shoulderguards',
             quality = 4,
         }))
         table.insert(_G.GimmeTheLoot.db.profile.records, FakeRollSession(5, {
-            link = '\124cff0070dd\124Hitem:22101::::::::60:::::\124h[Pauldrons of The Five Thunders]\124h\124r',
+            link = '...Cyclone Shoulderguards...',
             name = 'Pauldrons of The Five Thunders',
             quality = 3,
         }))
