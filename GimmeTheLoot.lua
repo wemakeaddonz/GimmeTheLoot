@@ -132,35 +132,37 @@ function GimmeTheLoot:DisplayFrame()
 +---------------------------------------------------------------+
     --]]
     local gui = LibStub('AceGUI-3.0')
+    local searchQuery = {quality = {}}
+
     local mainFrame = gui:Create('Frame')
+    local mainContainer = gui:Create('SimpleGroup')
+    local utilityContainer = gui:Create('SimpleGroup')
+    local searchBox = gui:Create('EditBox')
+    local qualityDropdown = gui:Create('Dropdown')
+    local resultsContainer = gui:Create('InlineGroup')
+    local recordsContainer = gui:Create('ScrollFrame')
+
     mainFrame:SetTitle('Roll History')
     mainFrame:SetCallback('OnClose', function(widget)
         gui:Release(widget)
     end)
     mainFrame:SetLayout('Fill')
 
-    local mainContainer = gui:Create('SimpleGroup')
     mainContainer:SetLayout('Flow')
     mainFrame:AddChild(mainContainer)
 
-    local utilityContainer = gui:Create('SimpleGroup')
     utilityContainer:SetLayout('Flow')
     mainContainer:AddChild(utilityContainer)
 
-    gtlSearch = {quality = {}}
-
-    local searchBox = gui:Create('EditBox')
     searchBox:SetLabel('search')
     searchBox:DisableButton(true)
     searchBox:SetMaxLetters(20)
     searchBox:SetCallback('OnTextChanged', function(_, _, text)
-        gtlSearch.text = text
-        recordsContainer:ReleaseChildren()
-        self:RenderDisplay(gui, recordsContainer, self:SearchRecords(gtlSearch))
+        searchQuery.text = text
+        self:RenderRecords(recordsContainer, self:SearchRecords(searchQuery))
     end)
     utilityContainer:AddChild(searchBox)
 
-    local qualityDropdown = gui:Create('Dropdown')
     qualityDropdown:SetList({
         [2] = '|cff00ff00Uncommon',
         [3] = '|cff0000ffRare',
@@ -169,33 +171,34 @@ function GimmeTheLoot:DisplayFrame()
     })
     qualityDropdown:SetMultiselect(true)
     qualityDropdown:SetCallback('OnValueChanged', function(_, _, key, checked)
-        gtlSearch.quality[key] = checked or nil
-        recordsContainer:ReleaseChildren()
-        self:RenderDisplay(gui, recordsContainer, self:SearchRecords(gtlSearch))
+        searchQuery.quality[key] = checked or nil
+        self:RenderRecords(recordsContainer, self:SearchRecords(searchQuery))
     end)
     utilityContainer:AddChild(qualityDropdown)
 
-    local resultsContainer = gui:Create('InlineGroup')
     resultsContainer:SetTitle('History:')
     resultsContainer:SetFullWidth(true)
     resultsContainer:SetFullHeight(true)
     resultsContainer:SetLayout('Fill')
     mainContainer:AddChild(resultsContainer)
 
-    recordsContainer = gui:Create('ScrollFrame')
     recordsContainer:SetLayout('List')
     recordsContainer:SetFullHeight(true)
     resultsContainer:AddChild(recordsContainer)
 
-    self:RenderDisplay(gui, recordsContainer, self:SearchRecords())
+    self:RenderRecords(recordsContainer, self:SearchRecords(searchQuery))
 end
 
-function GimmeTheLoot:RenderDisplay(gui, scroll, records)
+function GimmeTheLoot:RenderRecords(container, records)
+    local gui = LibStub('AceGUI-3.0')
+
+    -- empty all records before rendering
+    container:ReleaseChildren()
     for _, v in pairs(records) do
         local recordContainer = gui:Create('SimpleGroup')
         recordContainer:SetFullWidth(true)
         recordContainer:SetLayout('Flow')
-        scroll:AddChild(recordContainer)
+        container:AddChild(recordContainer)
 
         local itemName = gui:Create('InteractiveLabel')
         itemName:SetRelativeWidth(.4)
