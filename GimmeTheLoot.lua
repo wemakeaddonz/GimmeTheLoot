@@ -3,6 +3,9 @@ if not _TEST then
         LibStub('AceAddon-3.0'):NewAddon('GimmeTheLoot', 'AceConsole-3.0', 'AceEvent-3.0')
 end
 
+-- modules
+local GUI, Search, Tracker
+
 local defaults = {profile = {records = {}}}
 
 local options = {
@@ -36,6 +39,7 @@ function GimmeTheLoot:OnInitialize()
 
     LibStub('AceConfig-3.0'):RegisterOptionsTable('GimmeTheLoot', options, {'gimmetheloot', 'gtl'})
 
+    --[[
     self:RegisterEvent('LOOT_ROLLS_COMPLETE', function(_, ...)
         return GimmeTheLoot:LootRollsComplete(...)
     end)
@@ -43,6 +47,13 @@ function GimmeTheLoot:OnInitialize()
         lootCounter = lootCounter + 1
         lootCounterMax = lootCounterMax + 1
     end)
+    ]]--
+end
+
+function GimmeTheLoot:OnEnable()
+    --GUI = self:GetModule("GUI")
+    --Search = self:GetModule("Search")
+    Tracker = self:GetModule("Tracker")
 end
 
 function GimmeTheLoot:LootRollsComplete(_)

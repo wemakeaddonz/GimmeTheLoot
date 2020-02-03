@@ -7,3 +7,4 @@
 
 embeds.xml
 GimmeTheLoot.lua
+Tracker.lua
