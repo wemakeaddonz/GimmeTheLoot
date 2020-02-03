@@ -44,8 +44,8 @@ function Tracker:AddRolls(numRolls)
             table.insert(record.rolls, {name = playerName, type = rollType, roll = rollValue})
             record.winner = isWinner and playerName
         end
-    end
 
-    record.rollCompleted = time()
-    table.insert(GimmeTheLoot.db.profile.records, record) -- needs test
+        record.rollCompleted = time()
+        table.insert(GimmeTheLoot.db.profile.records, record) -- needs test
+    end
 end
