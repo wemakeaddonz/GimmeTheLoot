@@ -9,6 +9,9 @@ globals = {
     'gtlSearch',
     'FakeRollSession',
     'recordsContainer',
+    'GUI',
+    'Search',
+    'Tracker',
 }
 read_globals = {'_TEST', 'time', 'date', 'C_LootHistory', 'GameTooltip'}
 
