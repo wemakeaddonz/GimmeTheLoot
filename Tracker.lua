@@ -42,7 +42,9 @@ function Tracker:AddRolls(numRolls)
             local playerName, _, rollType, rollValue, isWinner = LootHistoryGetPlayerInfo(i, p)
 
             table.insert(record.rolls, {name = playerName, type = rollType, roll = rollValue})
-            record.winner = isWinner and playerName
+            if isWinner then
+                record.winner = playerName
+            end
         end
 
         record.rollCompleted = time()
