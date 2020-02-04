@@ -33,7 +33,9 @@ end
 
 _G._TEST = true
 _G.GimmeTheLoot = {db = {profile = {records = {}}}}
+_G.Search = {}
 require 'GimmeTheLoot'
+require 'Search'
 
 describe('record searching', function()
     it('should match a record with a substring', function()
@@ -43,8 +45,8 @@ describe('record searching', function()
             quality = 4,
         })
 
-        assert.is.truthy(GimmeTheLoot:SearchMatchItemText('Cyclone', record))
-        assert.is.falsy(GimmeTheLoot:SearchMatchItemText('NotCyclone', record))
+        assert.is.truthy(Search:SearchMatchItemText('Cyclone', record))
+        assert.is.falsy(Search:SearchMatchItemText('NotCyclone', record))
     end)
 
     it('should match a record with a differently cased substring', function()
@@ -54,8 +56,8 @@ describe('record searching', function()
             quality = 4,
         })
 
-        assert.is.truthy(GimmeTheLoot:SearchMatchItemText('CyClONE', record))
-        assert.is.falsy(GimmeTheLoot:SearchMatchItemText('NotCyclone', record))
+        assert.is.truthy(Search:SearchMatchItemText('CyClONE', record))
+        assert.is.falsy(Search:SearchMatchItemText('NotCyclone', record))
     end)
 
     it('should match a record with a specific quality level', function()
@@ -66,14 +68,14 @@ describe('record searching', function()
         })
 
         -- empty inputs for quality are trivially truthy
-        assert.is.truthy(GimmeTheLoot:SearchMatchItemQuality(nil, record))
-        assert.is.truthy(GimmeTheLoot:SearchMatchItemQuality({}, record))
+        assert.is.truthy(Search:SearchMatchItemQuality(nil, record))
+        assert.is.truthy(Search:SearchMatchItemQuality({}, record))
 
-        assert.is.truthy(GimmeTheLoot:SearchMatchItemQuality({[4] = true}, record))
-        assert.is.truthy(GimmeTheLoot:SearchMatchItemQuality(
+        assert.is.truthy(Search:SearchMatchItemQuality({[4] = true}, record))
+        assert.is.truthy(Search:SearchMatchItemQuality(
                              {[1] = true, [2] = true, [3] = true, [4] = true, [5] = true}, record))
 
-        assert.is.falsy(GimmeTheLoot:SearchMatchItemQuality(
+        assert.is.falsy(Search:SearchMatchItemQuality(
                             {[1] = true, [2] = true, [3] = true, [5] = true}, record))
     end)
 end)
@@ -91,19 +93,19 @@ describe('record searching over multiple records', function()
             quality = 3,
         }))
 
-        assert.is.equal(#GimmeTheLoot:SearchRecords(), 2)
-        assert.is.equal(#GimmeTheLoot:SearchRecords(nil), 2)
-        assert.is.equal(#GimmeTheLoot:SearchRecords({}), 2)
+        assert.is.equal(#Search:SearchRecords(), 2)
+        assert.is.equal(#Search:SearchRecords(nil), 2)
+        assert.is.equal(#Search:SearchRecords({}), 2)
 
-        assert.is.equal(#GimmeTheLoot:SearchRecords({quality = {[4] = true}}), 1)
-        assert.is.equal(#GimmeTheLoot:SearchRecords({quality = {[3] = true}}), 1)
-        assert.are_not.same(GimmeTheLoot:SearchRecords({quality = {[4] = true}}),
-                            GimmeTheLoot:SearchRecords({quality = {[3] = true}}))
+        assert.is.equal(#Search:SearchRecords({quality = {[4] = true}}), 1)
+        assert.is.equal(#Search:SearchRecords({quality = {[3] = true}}), 1)
+        assert.are_not.same(Search:SearchRecords({quality = {[4] = true}}),
+                            Search:SearchRecords({quality = {[3] = true}}))
 
-        assert.is.equal(#GimmeTheLoot:SearchRecords({text = 'r'}), 2)
+        assert.is.equal(#Search:SearchRecords({text = 'r'}), 2)
 
-        assert.is.equal(#GimmeTheLoot:SearchRecords({text = 'cyclone', quality = {[4] = true}}), 1)
+        assert.is.equal(#Search:SearchRecords({text = 'cyclone', quality = {[4] = true}}), 1)
 
-        assert.is.equal(#GimmeTheLoot:SearchRecords({text = 'cyclone', quality = {[3] = true}}), 0)
+        assert.is.equal(#Search:SearchRecords({text = 'cyclone', quality = {[3] = true}}), 0)
     end)
 end)
