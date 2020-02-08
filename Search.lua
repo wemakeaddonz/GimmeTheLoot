@@ -11,15 +11,22 @@ function Search:SearchMatchItemQuality(quality, record)
     return not quality or next(quality) == nil or quality[record.item.quality]
 end
 
-function Search:SearchRecords(search)
+function Search:SearchRecords(search, limit, offset)
     local results = {}
+    offset = offset or 0
     search = search or {}
 
-    for _, record in pairs(GimmeTheLoot.db.profile.records) do
-        if record.item.name and record.item.quality then
-            if self:SearchMatchItemText(search.text, record) and
-                self:SearchMatchItemQuality(search.quality, record) then
+    for _, record in ipairs(GimmeTheLoot.db.profile.records) do
+        if self:SearchMatchItemText(search.text, record) and
+            self:SearchMatchItemQuality(search.quality, record) then
+            if offset ~= 0 then
+                offset = offset - 1
+            else
                 table.insert(results, record)
+
+                if limit and #results == limit then
+                    break
+                end
             end
         end
     end
