@@ -4,11 +4,18 @@ end
 
 local AceGUI = LibStub('AceGUI-3.0')
 local Search
+local searchOffset = 0
+local searchLimit = 30
 
 function GUI:OnInitialize()
     Search = GimmeTheLoot:GetModule('Search')
 end
 
+function GUI:PerformSearch(container, search)
+    searchOffset = 0 -- reset offset when searching
+    container:ReleaseChildren()
+    self:AppendRecords(container, Search:SearchRecords(search, searchLimit, searchOffset))
+end
 
 --[[ Frame guide:
 
@@ -19,6 +26,12 @@ end
 || |  +-searchBox (EditBox)--+                               | ||
 || |  |                      |                               | ||
 || |  +----------------------+                               | ||
+|| |  +-qualityDropdown (Dropdown)--+                        | ||
+|| |  |                             |                        | ||
+|| |  +-----------------------------+                        | ||
+|| |  +-loadMoreButton (Button)--+                           | ||
+|| |  |                          |                           | ||
+|| |  +--------------------------+                           | ||
 || +---------------------------------------------------------+ ||
 ||                                                             ||
 || +-resultsContainer (SimpleGroup)--------------------------+ ||
@@ -38,7 +51,6 @@ end
 |---------------------------------------------------------------|
 +---------------------------------------------------------------+
 --]]
-
 function GUI:DisplayFrame()
     local searchQuery = {quality = {}}
 
@@ -47,6 +59,7 @@ function GUI:DisplayFrame()
     local utilityContainer = AceGUI:Create('SimpleGroup')
     local searchBox = AceGUI:Create('EditBox')
     local qualityDropdown = AceGUI:Create('Dropdown')
+    local loadMoreButton = AceGUI:Create('Button')
     local resultsContainer = AceGUI:Create('InlineGroup')
     local recordsContainer = AceGUI:Create('ScrollFrame')
 
@@ -67,7 +80,7 @@ function GUI:DisplayFrame()
     searchBox:SetMaxLetters(20)
     searchBox:SetCallback('OnTextChanged', function(_, _, text)
         searchQuery.text = text
-        self:RenderRecords(recordsContainer, Search:SearchRecords(searchQuery))
+        self:PerformSearch(recordsContainer, searchQuery)
     end)
     utilityContainer:AddChild(searchBox)
 
@@ -80,9 +93,18 @@ function GUI:DisplayFrame()
     qualityDropdown:SetMultiselect(true)
     qualityDropdown:SetCallback('OnValueChanged', function(_, _, key, checked)
         searchQuery.quality[key] = checked or nil
-        self:RenderRecords(recordsContainer, Search:SearchRecords(searchQuery))
+        self:PerformSearch(recordsContainer, searchQuery)
     end)
     utilityContainer:AddChild(qualityDropdown)
+
+    loadMoreButton:SetText('Load more records')
+    loadMoreButton:SetDisabled(#GimmeTheLoot.db.profile.records < searchLimit)
+    loadMoreButton:SetCallback('OnClick', function()
+        searchOffset = searchOffset + searchLimit
+        self:AppendRecords(recordsContainer,
+                           Search:SearchRecords(searchQuery, searchLimit, searchOffset))
+    end)
+    utilityContainer:AddChild(loadMoreButton)
 
     resultsContainer:SetTitle('History:')
     resultsContainer:SetFullWidth(true)
@@ -94,13 +116,12 @@ function GUI:DisplayFrame()
     recordsContainer:SetFullHeight(true)
     resultsContainer:AddChild(recordsContainer)
 
-    self:RenderRecords(recordsContainer, Search:SearchRecords(searchQuery))
+    self:AppendRecords(recordsContainer,
+                       Search:SearchRecords(searchQuery, searchLimit, searchOffset))
 end
 
-function GUI:RenderRecords(container, records)
-    -- empty all records before rendering
-    container:ReleaseChildren()
-    for _, v in pairs(records) do
+function GUI:AppendRecords(container, records)
+    for _, v in ipairs(records) do
         local recordContainer = AceGUI:Create('SimpleGroup')
         recordContainer:SetFullWidth(true)
         recordContainer:SetLayout('Flow')
