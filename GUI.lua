@@ -4,17 +4,18 @@ end
 
 local AceGUI = LibStub('AceGUI-3.0')
 local Search
-local searchOffset = 0
-local searchLimit = 30
+local searchQuery = {}
+local searchIterator
+local pageSize = 30
 
 function GUI:OnInitialize()
     Search = GimmeTheLoot:GetModule('Search')
 end
 
 function GUI:PerformSearch(container, search)
-    searchOffset = 0 -- reset offset when searching
+    searchIterator = Search:SearchIterator(search, pageSize)
     container:ReleaseChildren()
-    self:AppendRecords(container, Search:SearchRecords(search, searchLimit, searchOffset))
+    self:AppendRecords(container, searchIterator())
 end
 
 --[[ Frame guide:
@@ -52,8 +53,6 @@ end
 +---------------------------------------------------------------+
 --]]
 function GUI:DisplayFrame()
-    local searchQuery = {quality = {}}
-
     local mainFrame = AceGUI:Create('Frame')
     local mainContainer = AceGUI:Create('SimpleGroup')
     local utilityContainer = AceGUI:Create('SimpleGroup')
@@ -92,17 +91,16 @@ function GUI:DisplayFrame()
     })
     qualityDropdown:SetMultiselect(true)
     qualityDropdown:SetCallback('OnValueChanged', function(_, _, key, checked)
+        searchQuery.quality = searchQuery.quality or {}
         searchQuery.quality[key] = checked or nil
         self:PerformSearch(recordsContainer, searchQuery)
     end)
     utilityContainer:AddChild(qualityDropdown)
 
     loadMoreButton:SetText('Load more records')
-    loadMoreButton:SetDisabled(#GimmeTheLoot.db.profile.records < searchLimit)
+    loadMoreButton:SetDisabled(#GimmeTheLoot.db.profile.records < pageSize)
     loadMoreButton:SetCallback('OnClick', function()
-        searchOffset = searchOffset + searchLimit
-        self:AppendRecords(recordsContainer,
-                           Search:SearchRecords(searchQuery, searchLimit, searchOffset))
+        self:AppendRecords(recordsContainer, searchIterator())
     end)
     utilityContainer:AddChild(loadMoreButton)
 
@@ -116,8 +114,7 @@ function GUI:DisplayFrame()
     recordsContainer:SetFullHeight(true)
     resultsContainer:AddChild(recordsContainer)
 
-    self:AppendRecords(recordsContainer,
-                       Search:SearchRecords(searchQuery, searchLimit, searchOffset))
+    self:PerformSearch(recordsContainer, searchQuery)
 end
 
 function GUI:AppendRecords(container, records)

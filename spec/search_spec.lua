@@ -79,9 +79,8 @@ describe('record searching', function()
                             {[1] = true, [2] = true, [3] = true, [5] = true}, record))
     end)
 end)
-
 describe('record searching over multiple records', function()
-    it('should match a record with a substring', function()
+    it('should page correctly', function()
         table.insert(_G.GimmeTheLoot.db.profile.records, FakeRollSession(5, {
             link = '...Cyclone Shoulderguards...',
             name = 'Cyclone Shoulderguards',
@@ -89,23 +88,19 @@ describe('record searching over multiple records', function()
         }))
         table.insert(_G.GimmeTheLoot.db.profile.records, FakeRollSession(5, {
             link = '...Cyclone Shoulderguards...',
-            name = 'Pauldrons of The Five Thunders',
+            name = 'Cyclone Shoulderguards',
             quality = 3,
         }))
 
-        assert.is.equal(#Search:SearchRecords(), 2)
-        assert.is.equal(#Search:SearchRecords(nil), 2)
-        assert.is.equal(#Search:SearchRecords({}), 2)
+        local cursor = Search:SearchIterator({text = 'cyclone'}, 1)
+        local firstPage, secondPage, thirdPage = cursor(), cursor(), cursor()
+        assert.is.equal(#firstPage, 1)
+        assert.is.equal(#secondPage, 1)
+        assert.is.equal(thirdPage, nil)
+        assert.is.equal(firstPage[1].item.quality, 4)
+        assert.is.equal(secondPage[1].item.quality, 3)
 
-        assert.is.equal(#Search:SearchRecords({quality = {[4] = true}}), 1)
-        assert.is.equal(#Search:SearchRecords({quality = {[3] = true}}), 1)
-        assert.are_not.same(Search:SearchRecords({quality = {[4] = true}}),
-                            Search:SearchRecords({quality = {[3] = true}}))
-
-        assert.is.equal(#Search:SearchRecords({text = 'r'}), 2)
-
-        assert.is.equal(#Search:SearchRecords({text = 'cyclone', quality = {[4] = true}}), 1)
-
-        assert.is.equal(#Search:SearchRecords({text = 'cyclone', quality = {[3] = true}}), 0)
+        cursor = Search:SearchIterator({text = 'doesntexist'})
+        assert.is.equal(cursor(), nil)
     end)
 end)

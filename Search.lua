@@ -11,25 +11,31 @@ function Search:SearchMatchItemQuality(quality, record)
     return not quality or next(quality) == nil or quality[record.item.quality]
 end
 
-function Search:SearchRecords(search, limit, offset)
-    local results = {}
-    offset = offset or 0
-    search = search or {}
+function Search:SearchIterator(search, pageSize)
+    local search = search or {}
+    local pageSize = pageSize or 30
+    local offset = 0
 
-    for _, record in ipairs(GimmeTheLoot.db.profile.records) do
-        if self:SearchMatchItemText(search.text, record) and
-            self:SearchMatchItemQuality(search.quality, record) then
-            if offset ~= 0 then
-                offset = offset - 1
-            else
-                table.insert(results, record)
+    return function()
+        local currentPage = {}
 
-                if limit and #results == limit then
+        for i = offset + 1, #GimmeTheLoot.db.profile.records do
+            offset = i
+            local record = GimmeTheLoot.db.profile.records[i]
+            if self:SearchMatchItemText(search.text, record) and
+                self:SearchMatchItemQuality(search.quality, record) then
+                currentPage[#currentPage + 1] = record
+
+                if #currentPage == pageSize then
                     break
                 end
             end
         end
-    end
 
-    return results
+        if #currentPage > 0 then
+            return currentPage
+        else
+            return nil
+        end
+    end
 end
