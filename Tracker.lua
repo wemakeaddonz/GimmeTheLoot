@@ -32,11 +32,13 @@ function Tracker:AddRolls(numRolls)
     for i = 1, numRolls do
         local record = {item = {}, rolls = {}}
         local _, itemLink, numPlayers = LootHistoryGetItem(i)
-        local itemName, _, itemQuality = GetItemInfo(itemLink)
+        local info = {GetItemInfo(itemLink)}
 
-        record.item.link = itemLink
-        record.item.name = itemName
-        record.item.quality = itemQuality
+        record.item.name = info[1]
+        record.item.link = info[2]
+        record.item.quality = info[3]
+        record.item.type = info[12] -- classID
+        record.item.subtype = info[13] -- subclassID
 
         for p = 1, numPlayers do
             local playerName, _, rollType, rollValue, isWinner = LootHistoryGetPlayerInfo(i, p)
