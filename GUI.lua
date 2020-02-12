@@ -52,7 +52,7 @@ end
 +---------------------------------------------------------------+
 --]]
 function GUI:DisplayFrame()
-    local searchQuery = {quality = {}}
+    local searchQuery = {quality = {}, type = {}}
 
     local mainFrame = AceGUI:Create('Frame')
     local mainContainer = AceGUI:Create('SimpleGroup')
@@ -62,6 +62,7 @@ function GUI:DisplayFrame()
     local loadMoreButton = AceGUI:Create('Button')
     local resultsContainer = AceGUI:Create('InlineGroup')
     local recordsContainer = AceGUI:Create('ScrollFrame')
+    local typeDropdown = AceGUI:Create('Dropdown')
 
     mainFrame:SetTitle('Roll History')
     mainFrame:SetCallback('OnClose', function(widget)
@@ -96,6 +97,14 @@ function GUI:DisplayFrame()
         self:PerformSearch(recordsContainer, searchQuery)
     end)
     utilityContainer:AddChild(qualityDropdown)
+
+    typeDropdown:SetList(GimmeTheLoot.Resources.ItemTypes)
+    typeDropdown:SetMultiselect(true)
+    typeDropdown:SetCallback('OnValueChanged', function(_, _, key, checked)
+        searchQuery.type[key] = checked or nil
+        self:PerformSearch(recordsContainer, searchQuery)
+    end)
+    utilityContainer:AddChild(typeDropdown)
 
     loadMoreButton:SetText('Load more records')
     loadMoreButton:SetDisabled(#GimmeTheLoot.db.profile.records < searchLimit)
