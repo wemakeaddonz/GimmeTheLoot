@@ -12,7 +12,11 @@ function Search:SearchMatchItemQuality(quality, record)
 end
 
 function Search:SearchMatchItemType(itemType, record)
-    return not itemType or next(itemType) == nil or itemType[record.item.type]
+    return not itemType or itemType == -1 or itemType == record.item.type
+end
+
+function Search:SearchMatchItemSubType(itemSubType, record)
+    return not itemSubType or itemSubType == -1 or itemSubType == record.item.subtype
 end
 
 function Search:SearchRecords(search, limit, offset)
@@ -23,7 +27,8 @@ function Search:SearchRecords(search, limit, offset)
     for _, record in ipairs(GimmeTheLoot.db.profile.records) do
         if self:SearchMatchItemText(search.text, record) and
             self:SearchMatchItemQuality(search.quality, record) and 
-            self:SearchMatchItemType(search.type, record) then
+            self:SearchMatchItemType(search.type, record) and 
+            self:SearchMatchItemSubType(search.subtype, record) then
             if offset ~= 0 then
                 offset = offset - 1
             else

@@ -52,7 +52,7 @@ end
 +---------------------------------------------------------------+
 --]]
 function GUI:DisplayFrame()
-    local searchQuery = {quality = {}, type = {}}
+    local searchQuery = {quality = {},}
 
     local mainFrame = AceGUI:Create('Frame')
     local mainContainer = AceGUI:Create('SimpleGroup')
@@ -63,6 +63,7 @@ function GUI:DisplayFrame()
     local resultsContainer = AceGUI:Create('InlineGroup')
     local recordsContainer = AceGUI:Create('ScrollFrame')
     local typeDropdown = AceGUI:Create('Dropdown')
+    local subtypeDropdown = AceGUI:Create('Dropdown')
 
     mainFrame:SetTitle('Roll History')
     mainFrame:SetCallback('OnClose', function(widget)
@@ -99,12 +100,27 @@ function GUI:DisplayFrame()
     utilityContainer:AddChild(qualityDropdown)
 
     typeDropdown:SetList(GimmeTheLoot.Resources.ItemTypes)
-    typeDropdown:SetMultiselect(true)
-    typeDropdown:SetCallback('OnValueChanged', function(_, _, key, checked)
-        searchQuery.type[key] = checked or nil
+    typeDropdown:SetCallback('OnValueChanged', function(_, _, key)
+        searchQuery.type = key
         self:PerformSearch(recordsContainer, searchQuery)
+
+        if GimmeTheLoot.Resources.ItemSubTypes[key] then
+            subtypeDropdown:SetList(GimmeTheLoot.Resources.ItemSubTypes[key])
+            subtypeDropdown:SetDisabled(false)
+        else
+            subtypeDropdown:SetDisabled(true)
+        end
+        subtypeDropdown:SetValue(-1)
     end)
     utilityContainer:AddChild(typeDropdown)
+
+    subtypeDropdown = AceGUI:Create('Dropdown')
+    subtypeDropdown:SetDisabled(true)
+    subtypeDropdown:SetCallback('OnValueChanged', function(_, _, key)
+        searchQuery.subtype = key
+        self:PerformSearch(recordsContainer, searchQuery)
+    end)
+    utilityContainer:AddChild(subtypeDropdown)
 
     loadMoreButton:SetText('Load more records')
     loadMoreButton:SetDisabled(#GimmeTheLoot.db.profile.records < searchLimit)

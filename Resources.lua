@@ -3,6 +3,7 @@ local Resources = {}
 GimmeTheLoot.Resources = Resources
 
 Resources.ItemTypes = {
+    [-1] = 'Any',
     [0] = 'Consumable',
     [1] = 'Container',
     [2] = 'Weapon',
@@ -29,6 +30,7 @@ Resources.ItemSubTypes = {
     --[1] = {}, -- container
 
     [2] = { -- weapons
+        [-1] = 'Any',
         [0] = 'One-Handed Axes',
         [1] = 'Two-Handed Axes',
         [2] = 'Bows',
@@ -55,6 +57,7 @@ Resources.ItemSubTypes = {
     -- [3] = {}, -- gem (unused)
 
     [4] = { -- armor
+        [-1] = 'Any',
         [0] = 'Jewelry and Trinkets',
         [1] = 'Cloth',
         [2] = 'Leather',
@@ -72,6 +75,7 @@ Resources.ItemSubTypes = {
     -- [5] = {}, -- reagent
 
     [6] = { -- projectile
+        [-1] = 'Any',
         [2] = 'Arrow',
         [3] = 'Bullet',
     },
