@@ -50,6 +50,6 @@ function Tracker:AddRolls(numRolls)
         end
 
         record.rollCompleted = time()
-        table.insert(GimmeTheLoot.db.profile.records, record) -- needs test
+        table.insert(GimmeTheLoot.db.profile.records, 1, record) -- needs test
     end
 end
